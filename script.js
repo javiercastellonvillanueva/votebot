@@ -298,7 +298,7 @@ async function shareResult() {
         
         // Create an image element from the canvas
         const shareImage = document.createElement('img');
-        shareImage.src = canvas.toDataURL('image/png');
+        shareImage.src = canvas.toDataURL('image/jpeg', 0.8);
         shareImage.style.cssText = `
             max-width: 100%;
             height: auto;
@@ -306,9 +306,9 @@ async function shareResult() {
             display: block;
         `;
         
-        // Add screenshot instruction
+        // Add instruction
         const instruction = document.createElement('p');
-        instruction.textContent = 'Screenshot to share';
+        instruction.textContent = 'Share your result:';
         instruction.style.cssText = `
             margin: 10px 0;
             font-size: 18px;
@@ -317,54 +317,65 @@ async function shareResult() {
             text-align: center;
         `;
 
-        // Add copy to clipboard button
-        const copyButton = document.createElement('button');
-        copyButton.textContent = '📋 Copy to Clipboard';
-        copyButton.style.cssText = `
+        // Create share buttons container
+        const buttonContainer = document.createElement('div');
+        buttonContainer.style.cssText = `
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+        `;
+
+        // Add native share button (for mobile)
+        if (navigator.share) {
+            const shareButton = document.createElement('button');
+            shareButton.textContent = '📱 Share';
+            shareButton.style.cssText = `
+                padding: 10px 20px;
+                border: none;
+                border-radius: 25px;
+                background: #4CAF50;
+                color: white;
+                font-size: 16px;
+                cursor: pointer;
+            `;
+            
+            shareButton.onclick = async () => {
+                try {
+                    // Convert canvas to blob
+                    const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.8));
+                    const file = new File([blob], 'ballot-face-result.jpg', { type: 'image/jpeg' });
+                    
+                    await navigator.share({
+                        title: 'My Ballot Face Result',
+                        text: 'Check out who AI thinks I\'m voting for!',
+                        files: [file]
+                    });
+                } catch (err) {
+                    console.error('Error sharing:', err);
+                }
+            };
+            buttonContainer.appendChild(shareButton);
+        }
+
+        // Add save button
+        const saveButton = document.createElement('button');
+        saveButton.textContent = '💾 Save Image';
+        saveButton.style.cssText = `
             padding: 10px 20px;
             border: none;
             border-radius: 25px;
-            background: #4CAF50;
+            background: #2196F3;
             color: white;
             font-size: 16px;
             cursor: pointer;
-            margin-top: 10px;
         `;
         
-        copyButton.onclick = async () => {
-            try {
-                // Convert the image to a PNG blob (more widely supported than JPEG)
-                const blob = await (await fetch(shareImage.src)).blob();
-                
-                // Try the modern clipboard API first
-                try {
-                    await navigator.clipboard.write([
-                        new ClipboardItem({
-                            'image/png': blob
-                        })
-                    ]);
-                    copyButton.textContent = '✅ Copied!';
-                } catch (err) {
-                    // Fallback: Create a temporary textarea for the image URL
-                    const textarea = document.createElement('textarea');
-                    textarea.value = shareImage.src;
-                    document.body.appendChild(textarea);
-                    textarea.select();
-                    document.execCommand('copy');
-                    document.body.removeChild(textarea);
-                    copyButton.textContent = '✅ Copied to clipboard!';
-                }
-                
-                setTimeout(() => {
-                    copyButton.textContent = '📋 Copy to Clipboard';
-                }, 2000);
-            } catch (err) {
-                console.error('Failed to copy:', err);
-                copyButton.textContent = '❌ Failed to copy';
-                setTimeout(() => {
-                    copyButton.textContent = '📋 Copy to Clipboard';
-                }, 2000);
-            }
+        saveButton.onclick = () => {
+            const link = document.createElement('a');
+            link.download = 'ballot-face-result.jpg';
+            link.href = shareImage.src;
+            link.click();
         };
         
         // Add close button
@@ -378,7 +389,6 @@ async function shareResult() {
             color: white;
             font-size: 16px;
             cursor: pointer;
-            margin-top: 10px;
         `;
         
         const closePopup = () => {
@@ -389,13 +399,14 @@ async function shareResult() {
         closeButton.onclick = closePopup;
         overlay.onclick = closePopup;
         
-        // Add elements to popup in correct order
+        // Add elements to popup
+        buttonContainer.appendChild(saveButton);
+        buttonContainer.appendChild(closeButton);
+        
         popup.appendChild(shareImage);
         popup.appendChild(instruction);
-        popup.appendChild(copyButton);
-        popup.appendChild(closeButton);
+        popup.appendChild(buttonContainer);
         
-        // Add overlay and popup to document
         document.body.appendChild(overlay);
         document.body.appendChild(popup);
         
