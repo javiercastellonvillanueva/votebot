@@ -1,52 +1,84 @@
-let stream = null;
+let scanner = null;
 let imageData = null;
 
 async function startCamera() {
+    const cameraContainer = document.getElementById('camera-container');
+    cameraContainer.style.display = 'block';
+    
     try {
-        // Try to get the front camera on mobile devices
-        const constraints = {
-            video: {
-                facingMode: "user"
-            }
-        };
+        scanner = new Html5Qrcode("camera-container");
+        const cameras = await Html5Qrcode.getCameras();
         
-        stream = await navigator.mediaDevices.getUserMedia(constraints);
-        const video = document.getElementById('camera');
-        video.srcObject = stream;
-        video.style.display = 'block';
-        video.play();
-        document.getElementById('captureBtn').style.display = 'block';
+        if (cameras && cameras.length) {
+            const config = {
+                fps: 30,
+                qrbox: false,
+                aspectRatio: 1.333334,
+                showTorchButtonIfSupported: false,
+                showZoomSliderIfSupported: false,
+                defaultZoomValueIfSupported: 2
+            };
+            
+            // Create capture button
+            const captureBtn = document.createElement('button');
+            captureBtn.className = 'capture-button';
+            captureBtn.textContent = '📸 Capture';
+            document.body.appendChild(captureBtn);
+            
+            // Start camera
+            await scanner.start(
+                { facingMode: "user" },
+                config,
+                () => {} // Success callback - leave empty as we don't need QR scanning
+            );
+            
+            // Handle capture button click
+            captureBtn.onclick = async () => {
+                try {
+                    const frame = await scanner.getSnapshot();
+                    imageData = frame;
+                    
+                    // Show preview
+                    const preview = document.getElementById('preview');
+                    preview.src = frame;
+                    preview.style.display = 'block';
+                    
+                    // Clean up camera
+                    await stopCamera();
+                    document.getElementById('analyzeBtn').style.display = 'block';
+                    
+                } catch (error) {
+                    console.error('Error capturing photo:', error);
+                    alert('Error capturing photo. Please try again.');
+                }
+            };
+            
+        } else {
+            throw new Error('No cameras found');
+        }
     } catch (err) {
-        console.error('Error accessing camera:', err);
-        alert('Error accessing camera. Please make sure you have granted camera permissions.');
+        console.error('Error starting camera:', err);
+        alert('Could not access camera. Please try uploading a photo instead.');
+        cameraContainer.style.display = 'none';
     }
 }
 
-function capturePhoto() {
-    const video = document.getElementById('camera');
-    const canvas = document.getElementById('canvas');
-    const preview = document.getElementById('preview');
-    
-    // Set canvas dimensions to match video aspect ratio
-    const aspectRatio = video.videoWidth / video.videoHeight;
-    const width = Math.min(400, window.innerWidth - 40); // Max width of 400px or screen width - 40px padding
-    canvas.width = width;
-    canvas.height = width / aspectRatio;
-    
-    canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
-    
-    imageData = canvas.toDataURL('image/jpeg', 0.8); // Compress image for faster upload
-    preview.src = imageData;
-    preview.style.display = 'block';
-    
-    // Stop camera stream
-    if (stream) {
-        stream.getTracks().forEach(track => track.stop());
+async function stopCamera() {
+    if (scanner) {
+        await scanner.stop();
+        scanner = null;
+        document.getElementById('camera-container').style.display = 'none';
+        
+        // Remove capture button
+        const captureBtn = document.querySelector('.capture-button');
+        if (captureBtn) {
+            captureBtn.remove();
+        }
     }
-    video.style.display = 'none';
-    document.getElementById('captureBtn').style.display = 'none';
-    document.getElementById('analyzeBtn').style.display = 'block';
 }
+
+// Add cleanup on page unload
+window.addEventListener('beforeunload', stopCamera);
 
 function handleFileUpload(event) {
     const file = event.target.files[0];
