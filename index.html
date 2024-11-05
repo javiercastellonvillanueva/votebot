@@ -298,7 +298,7 @@
         <div class="input-section">
             <div id="camera-container"></div>
             <div class="button-wrapper">
-                <button onclick="startCamera()" class="camera-button">
+                <button onclick="handleCameraButton()" class="camera-button">
                     📸 Take Photo
                 </button>
                 <div class="file-upload">
@@ -312,7 +312,7 @@
         
         <video id="camera" style="display: none;"></video>
         <canvas id="canvas" style="display: none;"></canvas>
-        <img id="preview" style="display: none;">
+        <img id="preview" style="display: none; max-width: 100%; border-radius: 10px; margin: 20px auto;">
         
         <div class="button-wrapper">
             <button id="captureBtn" style="display: none;" onclick="capturePhoto()">📸 Capture</button>

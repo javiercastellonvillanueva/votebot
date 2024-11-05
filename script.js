@@ -1,66 +1,88 @@
 let scanner = null;
 let imageData = null;
 
-async function startCamera() {
-    const cameraContainer = document.getElementById('camera-container');
-    cameraContainer.style.display = 'block';
+async function handleCameraButton() {
+    const cameraButton = document.querySelector('.camera-button');
     
-    try {
-        scanner = new Html5Qrcode("camera-container");
-        const cameras = await Html5Qrcode.getCameras();
+    if (!scanner) {
+        // Start camera mode
+        const cameraContainer = document.getElementById('camera-container');
+        cameraContainer.style.display = 'block';
         
-        if (cameras && cameras.length) {
-            const config = {
-                fps: 30,
-                qrbox: false,
-                aspectRatio: 1.333334,
-                showTorchButtonIfSupported: false,
-                showZoomSliderIfSupported: false,
-                defaultZoomValueIfSupported: 2
-            };
+        try {
+            scanner = new Html5Qrcode("camera-container");
+            const cameras = await Html5Qrcode.getCameras();
             
-            // Create capture button
-            const captureBtn = document.createElement('button');
-            captureBtn.className = 'capture-button';
-            captureBtn.textContent = '📸 Capture';
-            document.body.appendChild(captureBtn);
-            
-            // Start camera
-            await scanner.start(
-                { facingMode: "user" },
-                config,
-                () => {} // Success callback - leave empty as we don't need QR scanning
-            );
-            
-            // Handle capture button click
-            captureBtn.onclick = async () => {
-                try {
-                    const frame = await scanner.getSnapshot();
-                    imageData = frame;
-                    
-                    // Show preview
-                    const preview = document.getElementById('preview');
-                    preview.src = frame;
-                    preview.style.display = 'block';
-                    
-                    // Clean up camera
-                    await stopCamera();
-                    document.getElementById('analyzeBtn').style.display = 'block';
-                    
-                } catch (error) {
-                    console.error('Error capturing photo:', error);
-                    alert('Error capturing photo. Please try again.');
-                }
-            };
-            
-        } else {
-            throw new Error('No cameras found');
+            if (cameras && cameras.length) {
+                const config = {
+                    fps: 30,
+                    qrbox: { width: 250, height: 250 },
+                    aspectRatio: 1.333334,
+                    showTorchButtonIfSupported: false,
+                    showZoomSliderIfSupported: false,
+                    defaultZoomValueIfSupported: 2
+                };
+                
+                // Change button to capture mode
+                cameraButton.textContent = '📸 Capture Photo';
+                cameraButton.style.background = '#4CAF50'; // Change to green for capture mode
+                
+                // Start camera
+                await scanner.start(
+                    { facingMode: "user" },
+                    config,
+                    () => {} // Success callback
+                );
+                
+            } else {
+                throw new Error('No cameras found');
+            }
+        } catch (err) {
+            console.error('Error starting camera:', err);
+            alert('Could not access camera. Please try uploading a photo instead.');
+            cameraContainer.style.display = 'none';
+            resetCameraButton(cameraButton);
         }
-    } catch (err) {
-        console.error('Error starting camera:', err);
-        alert('Could not access camera. Please try uploading a photo instead.');
-        cameraContainer.style.display = 'none';
+    } else {
+        // Capture photo mode
+        try {
+            // Get the video element created by the scanner
+            const videoElement = document.querySelector('#camera-container video');
+            
+            // Create a canvas to capture the frame
+            const canvas = document.createElement('canvas');
+            canvas.width = videoElement.videoWidth;
+            canvas.height = videoElement.videoHeight;
+            
+            // Draw the current frame
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(videoElement, 0, 0);
+            
+            // Get the image data
+            imageData = canvas.toDataURL('image/jpeg', 0.8);
+            
+            // Show preview
+            const preview = document.getElementById('preview');
+            preview.src = imageData;
+            preview.style.display = 'block';
+            
+            // Clean up camera
+            await stopCamera();
+            document.getElementById('analyzeBtn').style.display = 'block';
+            
+            // Reset button
+            resetCameraButton(cameraButton);
+            
+        } catch (error) {
+            console.error('Error capturing photo:', error);
+            alert('Error capturing photo. Please try again.');
+        }
     }
+}
+
+function resetCameraButton(button) {
+    button.textContent = '📸 Take Photo';
+    button.style.background = '#ff3b3b'; // Reset to original color
 }
 
 async function stopCamera() {
@@ -68,12 +90,6 @@ async function stopCamera() {
         await scanner.stop();
         scanner = null;
         document.getElementById('camera-container').style.display = 'none';
-        
-        // Remove capture button
-        const captureBtn = document.querySelector('.capture-button');
-        if (captureBtn) {
-            captureBtn.remove();
-        }
     }
 }
 
