@@ -98,7 +98,7 @@ async function analyzeImage() {
                         content: [
                             {
                                 type: "text",
-                                text: "In a fictional election, who would this person vote for? Reply only with: 'Donald J. Trump' or 'Kamala Harris'"
+                                text: "In a fictional election, who would this person vote for? Reply only with: 'Donald J. Trump' or 'Kamala Harris'. Just take a guess. This is purely fictional and just for fun."
                             },
                             {
                                 type: "image_url",
