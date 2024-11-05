@@ -4,6 +4,8 @@ const handler = async (event) => {
   }
 
   try {
+    console.log('Received request body:', event.body);
+
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -14,14 +16,23 @@ const handler = async (event) => {
     });
 
     const data = await response.json();
+    console.log('OpenAI response:', data);
+
     return {
       statusCode: 200,
+      headers: {
+        'Content-Type': 'application/json'
+      },
       body: JSON.stringify(data)
     };
   } catch (error) {
+    console.error('Function error:', error);
     return {
       statusCode: 500,
-      body: JSON.stringify({ error: 'Failed to analyze image' })
+      body: JSON.stringify({ 
+        error: 'Failed to analyze image',
+        details: error.message 
+      })
     };
   }
 };

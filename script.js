@@ -115,12 +115,15 @@ async function analyzeImage() {
         
         if (!response.ok) {
             const errorData = await response.json();
+            console.error('API Response Error:', errorData);
             throw new Error(`API Error: ${errorData.error?.message || 'Unknown error'}`);
         }
 
         const data = await response.json();
+        console.log('API Response Data:', data);
         
         if (!data.choices || !data.choices[0] || !data.choices[0].message) {
+            console.error('Unexpected data structure:', data);
             throw new Error('Unexpected API response format');
         }
 
@@ -141,7 +144,7 @@ async function analyzeImage() {
         document.getElementById('shareButton').onclick = shareResult;
 
     } catch (error) {
-        console.error('Error analyzing image:', error);
+        console.error('Full error object:', error);
         result.textContent = `❌ Error: ${error.message}`;
         candidateImage.style.display = 'none';
         setTimeout(() => {
