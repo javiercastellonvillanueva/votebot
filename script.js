@@ -120,7 +120,14 @@ async function analyzeImage() {
         }
 
         const data = await response.json();
-        console.log('API Response Data:', data);
+        
+        console.log('Raw API Response:', JSON.stringify(data, null, 2));
+        console.log('Response structure:', {
+            hasChoices: !!data.choices,
+            choicesLength: data.choices?.length,
+            hasMessage: data.choices?.[0]?.message,
+            fullData: data
+        });
         
         if (!data.choices || !data.choices[0] || !data.choices[0].message) {
             console.error('Unexpected data structure:', data);
