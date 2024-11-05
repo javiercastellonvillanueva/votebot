@@ -85,14 +85,13 @@ async function analyzeImage() {
         // Convert base64 image to URL-friendly format
         const base64Image = imageData.split(',')[1];
         
-        const response = await fetch('https://api.openai.com/v1/chat/completions', {
+        const response = await fetch('/.netlify/functions/analyze-image', {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`
+                'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-                model: "gpt-4o-mini",
+                model: "gpt-4-vision-preview",
                 messages: [
                     {
                         role: "user",
